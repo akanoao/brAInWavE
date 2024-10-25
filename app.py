@@ -8,6 +8,15 @@ last_checked_moisture = None
 message = ""
 current_mode = "Basic" 
 
+
+@app.after_request
+def add_header(response):
+    response.headers["Cache-Control"] = "no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
+
 @app.route('/')
 def home():
     return render_template('home.html')
@@ -18,7 +27,8 @@ def dashboard():
     global moisture_threshold
     global last_checked_moisture
     global message
-    
+    global current_mode
+
     return render_template('dashboard.html', 
                            moisture_threshold=moisture_threshold, 
                            last_checked_moisture=last_checked_moisture,
@@ -52,21 +62,30 @@ def get_moisture():
 @app.route('/update_threshold', methods=['POST'])
 def update_threshold():
     global moisture_threshold
+    global current_mode
     new_threshold = request.form.get('threshold', type=int)
     if new_threshold is not None:
         if 0 <= new_threshold <= 100:
             moisture_threshold = new_threshold
-    return redirect(url_for('dashboard'))
-
-
-@app.route('/update_mode', methods=['POST'])
-def update_mode():
-    global current_mode
+    
     selected_mode = request.form.get('mode')
+    # print(selected_mode)
     if selected_mode in ["Basic", "ML Prediction"]:
         current_mode = selected_mode
-        print(f"Updated mode: {current_mode}")  
+        # print(f"\n\n\nUpdated mode: {current_mode}") 
+    
     return redirect(url_for('dashboard'))
+
+
+# @app.route('/update_mode', methods=['POST'])
+# def update_mode():
+#     global current_mode
+#     selected_mode = request.form.get('mode')
+#     print(selected_mode)
+#     if selected_mode in ["Basic", "ML Prediction"]:
+#         current_mode = selected_mode
+#         print(f"\n\n\nUpdated mode: {current_mode}")  
+#     return redirect(url_for('dashboard'))
 
 
 
@@ -105,12 +124,6 @@ def water():
     message = "Moisture data not available."
     return jsonify({"cmd": "no_data"}), 200
 
-@app.after_request
-def add_header(response):
-    response.headers["Cache-Control"] = "no-store, must-revalidate"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
-    return response
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
