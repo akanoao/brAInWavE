@@ -11,20 +11,30 @@ def get_weather(city_name, api_key):
     if response.status_code == 200:
         # Parse the JSON response
         data = response.json()
-        # Extract relevant information
 
+        # Extract relevant information
         city = data['name']
         temperature = data['main']['temp']
-        weather_description = data['weather'][0]['description']
-        print(data)
-        print(f"City: {city}")
-        print(f"Temperature: {temperature} °C")
-        print(f"Weather: {weather_description.capitalize()}")
+        humidity = data['main']['humidity']
+        try:
+            rain = data["rain"]["1h"]
+        except KeyError:
+            rain = 0.0
+
+        # Return as JSON object
+        return {
+            "city": city,
+            "temperature": temperature,
+            "humidity": humidity,
+            "rain": rain
+        }
     else:
-        print("Error:", response.status_code, response.json().get("message", "Unknown error"))
+        # Return an error message
+        return {"error": response.status_code, "message": response.json().get("message", "Unknown error")}
 
 # Example usage
 if __name__ == "__main__":
     city_name = input("Enter the city name: ")
     api_key = "1742867b48c91cbfd96b692e8905626a"  # Replace with your actual API key
-    get_weather(city_name, api_key)
+    weather_data = get_weather(city_name, api_key)
+    print(weather_data)
